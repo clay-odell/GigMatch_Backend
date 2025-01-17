@@ -1,0 +1,31 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Admin Users",
+    "type": "object",
+    "properties": {
+      "adminID": {
+        "type": "string"
+      },
+      "venueID": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "email": {
+        "type": "string",
+        "format": "email"
+      },
+      "password": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "adminID",
+      "venueID",
+      "name",
+      "email",
+      "password"
+    ]
+  }
+  

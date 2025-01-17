@@ -1,0 +1,26 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Venues",
+    "type": "object",
+    "properties": {
+      "venueID": {
+        "type": "string"
+      },
+      "venueName": {
+        "type": "string"
+      },
+      "email": {
+        "type": "string",
+        "format": "email"
+      },
+      "location": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "venueID",
+      "email",
+      "venueName"
+    ]
+  }
+  

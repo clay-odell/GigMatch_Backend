@@ -1,0 +1,31 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Users",
+    "type": "object",
+    "properties": {
+      "userID": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "email": {
+        "type": "string",
+        "format": "email"
+      },
+      "password": {
+        "type": "string"
+      },
+      "userType": {
+        "type": "string",
+        "enum": ["Artist", "Venue"]
+      }
+    },
+    "required": [
+      "name",
+      "email",
+      "password",
+      "userType"
+    ]
+  }
+  

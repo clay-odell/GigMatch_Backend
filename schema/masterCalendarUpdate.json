@@ -1,0 +1,36 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Master Calendar Update",
+    "type": "object",
+    "properties": {
+      "eventID": {
+        "type": "string"
+      },
+      "adminID": {
+        "type": "string"
+      },
+      "eventName": {
+        "type": "string"
+      },
+      "eventDate": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "startTime": {
+        "type": "string",
+        "pattern": "^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$"
+      },
+      "endTime": {
+        "type": "string",
+        "pattern": "^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$"
+      },
+      "venueID": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "eventID",
+      "adminID"
+    ]
+  }
+  

@@ -1,0 +1,34 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "User Registration",
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "minLength": 1
+      },
+      "email": {
+        "type": "string",
+        "format": "email"
+      },
+      "password": {
+        "type": "string",
+        "minLength": 6
+      },
+      "artistName": {
+        "type": "string"
+      },
+      "userType": {
+        "type": "string",
+        "enum": ["Artist", "Venue"],
+        "default": "Artist"
+      }
+    },
+    "required": [
+      "name",
+      "email",
+      "password",
+      "artistName"
+    ]
+  }
+  

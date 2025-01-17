@@ -1,0 +1,55 @@
+GigMatch Calendar Relationship Diagram
+
+Entities:
+1. Admin Users
+   - adminID (PK)
+   - venueID (FK, Not Null)
+   - name (Not Null)
+   - email (Unique, Not Null)
+   - password (Not Null)
+
+2. Users
+   - userID (PK)
+   - name (Not Null)
+   - email (Unique, Not Null)
+   - password (Not Null)
+   - userType (Check "Artist" or "Venue", Not Null)
+
+3. Calendar Event Requests
+   - requestID (PK)
+   - userID (FK, Not Null)
+   - eventID (FK, Not Null)
+   - status (Check "Pending", "Approved", "Rejected", Default "Pending", Not Null)
+   - requestDate (Not Null)
+   - startTime (Not Null)
+   - endTime (Not Null)
+
+
+7. Master Calendar
+   - masterEventID (PK)
+   - adminID (FK, Not Null)
+   - eventName (Not Null)
+   - eventDate (Not Null)
+   - startTime (Not Null)
+   - endTime (Not Null)
+   - venueID (FK, Not Null)
+   - createdBy (Check "AdminUser", Not Null)
+
+8. User Calendar
+   - userEventID (PK)
+   - userID (FK, Not Null)
+   - eventName (Not Null)
+   - eventDate (Not Null)
+   - startTime (Not Null)
+   - endTime (Not Null)
+   - venueID (FK, Not Null)
+
+Relationships:
+- Admin Users can manage multiple Users. (Admin Users: 1 - * Users)
+- Admin Users are associated with a Venue. (Admin Users: * - 1 Venues)
+- Users (Artists and Venues) can submit Calendar Event Requests. (Users: 1 - * Calendar Event Requests)
+- Calendar Event Requests are associated with Calendar Events. (Calendar Event Requests: * - 1 Calendar Events)
+- Calendar Events take place at Venues. (Calendar Events: * - 1 Venues)
+- Artist Profiles are linked to Users of type Artist. (Users: 1 - 1 Artist Profiles)
+- Admin Users can create and modify events in the Master Calendar. (Admin Users: 1 - * Master Calendar)
+- Users can create and modify events in their User Calendar. (Users: 1 - * User Calendar)
