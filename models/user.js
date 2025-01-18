@@ -37,6 +37,9 @@ class User {
     artistName,
     userType = "Artist",
   }) {
+    if (password.length < 8) {
+      throw new BadRequestError("Password must be at least 8 characters.");
+    }
     const duplicateCheck = await db.query(
       `SELECT userId, name, email, password, artistName, userType FROM Users WHERE email = $1`,
       [email]
