@@ -10,6 +10,9 @@ const {
 
 class Admin {
   static async register(data) {
+    if(data.password.length < 8) {
+      throw new BadRequestError("Password must be at least 8 characters long.");
+    }
     const hashedPassword = await bcrypt.hash(data.password, 10);
     const result = await db.query(
       `INSERT INTO Users (userId, name, email, password, userType, venueName, location, artistname)

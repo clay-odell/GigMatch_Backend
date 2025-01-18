@@ -10,7 +10,7 @@ const {
   UnauthorizedError,
   NotFoundError,
 } = require("../expressError");
-const CalendarEventRequest = require("../models/calendarEventRequest"); // Ensure this is imported correctly
+const CalendarEventRequest = require("../models/calendarEventRequest"); 
 
 // Route for user login
 router.post("/login", async (req, res, next) => {
@@ -34,6 +34,9 @@ router.post("/login", async (req, res, next) => {
 router.post("/register", async (req, res, next) => {
   try {
     const { name, email, password, userType, artistName } = req.body;
+    if(!name || !email || !password || !userType) {
+      throw new BadRequestError("All fields are required.");
+    }
     const { user, token } = await User.register({
       name,
       email,
@@ -45,9 +48,10 @@ router.post("/register", async (req, res, next) => {
     // Respond with the token and new user information
     return res.status(201).json({ token, user });
   } catch (err) {
-    return next(err);
-  }
-});
+      if(err.message.includes("duplicate key value violates uniqe constraint"))
+        return next(new BadRequestError("User already exists."));
+    };
+  });
 
 // Route to get all users
 router.get("/", authenticateJWT, async (req, res, next) => {
@@ -119,7 +123,7 @@ router.put(
       const updateData = req.body;
       const updatedUser = await User.updateUser(userId, updateData);
       res.json(updatedUser);
-    } catch (error) {
+    } catch (error) {s
       next(error);
     }
   }

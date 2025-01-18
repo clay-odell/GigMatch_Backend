@@ -7,7 +7,7 @@ const {
   BadRequestError,
   UnauthorizedError,
 } = require("../expressError");
-const { sqlForPartialUpdate } = require('../helpers/sqlForPartialUpdate');
+const { sqlForPartialUpdate } = require("../helpers/sqlForPartialUpdate");
 const { BCRYPT_WORK_FACTOR } = require("../config");
 
 class User {
@@ -123,41 +123,41 @@ class User {
 
     return result.rows;
   }
+
   static async updateUser(userId, updateData) {
     // Check if the user exists
     const userResult = await db.query(
-      `SELECT userId FROM Users WHERE userId = $1`, // Correct table name
+      `SELECT userId FROM Users WHERE userId = $1`,
       [userId]
     );
-  
+
     const user = userResult.rows[0];
     if (!user) {
       throw new NotFoundError("User not found.");
     }
-  
+
     // Hash the new password if provided
     if (updateData.password) {
       const hashedPassword = await bcrypt.hash(
         updateData.password,
-        parseInt(BCRYPT_WORK_FACTOR)
+        BCRYPT_WORK_FACTOR
       );
       updateData.password = hashedPassword;
     }
-  
+
     // Generate the partial update SQL statement
-    const { query, values } = sqlForPartialUpdate("users", updateData, "userid", userId);
-  
-    // Logging the generated query and values
-    console.log("Generated SQL Query:", query);
-    console.log("Values for the SQL Query:", values);
-  
+    const { query, values } = sqlForPartialUpdate(
+      "Users",
+      updateData,
+      "userId",
+      userId
+    );
+
     // Execute the update query
     const result = await db.query(query, values);
-    console.log("Update Result:", result);
+
     return result.rows[0];
   }
-  
-
 }
 
 module.exports = User;
