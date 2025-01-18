@@ -53,4 +53,8 @@ psql -U [your_username] -d [your_db_name] -f gigMatch-schema.sql
 There are some existing test; however some of them currently don't perform as expected. An interesting personal challenge would be to fix the errors, and get the tests up and running as expected.
 
 
+<<<<<<< HEAD
 Happy coding!!! 
+=======
+Happy coding!!! 
+>>>>>>> f5493dd20b3bf75f468893620654a4c4ce6431ea
