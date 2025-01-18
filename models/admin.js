@@ -6,6 +6,7 @@ const {
   NotFoundError,
   BadRequestError,
   UnauthorizedError,
+  ExpressError,
 } = require("../expressError");
 const { BCRYPT_WORK_FACTOR } = require("../config");
 
@@ -194,32 +195,40 @@ class Admin {
   }
   
   static async deleteUser(userId, requester) {
-    if (requester.userType !== "Admin") {
+    if (!requester || requester.userType !== "Admin") {
       throw new UnauthorizedError("You are not authorized to delete this user.");
     }
-
-    const userResult = await db.query(
-      `SELECT userId FROM Users WHERE userId = $1`,
-      [userId]
-    );
-
-    const user = userResult.rows[0];
-    if (!user) {
-      throw new NotFoundError("User not found.");
+  
+    const client = await db.connect();
+    try {
+      const userResult = await client.query(
+        `SELECT userId FROM Users WHERE userId = $1`,
+        [userId]
+      );
+  
+      const user = userResult.rows[0];
+      if (!user) {
+        throw new NotFoundError("User not found.");
+      }
+  
+      const deleteResult = await client.query(
+        `DELETE FROM Users WHERE userId = $1 
+         RETURNING userId, name, email, userType`,
+        [userId]
+      );
+  
+      if (deleteResult.rowCount === 0) {
+        throw new BadRequestError("There was an error deleting the user.");
+      }
+  
+      return { deleted: deleteResult.rows[0] };
+    } catch (err) {
+      throw new Error("Internal Server Error", err);
+    } finally {
+      client.release();
     }
-
-    const result = await db.query(
-      `DELETE FROM Users WHERE userId = $1 
-       RETURNING userId, name, email, userType`,
-      [userId]
-    );
-
-    if (!result.rows.length) {
-      throw new BadRequestError("There was an error deleting the user.");
-    }
-
-    return { deleted: result.rows[0] };
   }
+  
 }
 
 module.exports = Admin;

@@ -32,49 +32,84 @@ router.post("/login", async (req, res, next) => {
     return next(err);
   }
 });
-// Route to get all users 
-router.get("/users", authenticateJWT, isAdmin, async (req, res, next) => { 
-  try { 
-    const requester = req.user; 
-    const users = await Admin.getAllUsers(requester); 
-    if (!users.length) throw new NotFoundError("No users found."); 
-    return res.json(users); 
+// Route to get all users
+router.get("/users", authenticateJWT, isAdmin, async (req, res, next) => {
+  try {
+    const requester = req.user;
+    const users = await Admin.getAllUsers(requester);
+    if (!users.length) throw new NotFoundError("No users found.");
+    return res.json(users);
   } catch (err) {
-     next(err); 
-} });
+    next(err);
+  }
+});
 
 // Route to fetch all event requests
-router.get("/event-requests", authenticateJWT, isAdmin, async (req, res, next) => {
-  try {
-    const requests = await Admin.getAllEventRequests();
-    if (!requests) throw new NotFoundError("No event requests found");
-    return res.json(requests);
-  } catch (err) {
-    next(err);
+router.get(
+  "/event-requests",
+  authenticateJWT,
+  isAdmin,
+  async (req, res, next) => {
+    try {
+      const requests = await Admin.getAllEventRequests();
+      if (!requests) throw new NotFoundError("No event requests found");
+      return res.json(requests);
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
 
 // Route to update an event request
-router.put("/event-requests/:requestId", authenticateJWT, isAdmin, async (req, res, next) => {
-  try {
-    if (!req.body) throw new BadRequestError("Update data is missing");
-    const result = await Admin.updateEventRequest(req.params.requestId, req.body, req.user);
-    if (!result) throw new NotFoundError("Event request not found");
-    res.json(result);
-  } catch (err) {
-    next(err);
+router.put(
+  "/event-requests/:requestId",
+  authenticateJWT,
+  isAdmin,
+  async (req, res, next) => {
+    try {
+      if (!req.body) throw new BadRequestError("Update data is missing");
+      const result = await Admin.updateEventRequest(
+        req.params.requestId,
+        req.body,
+        req.user
+      );
+      if (!result) throw new NotFoundError("Event request not found");
+      res.json(result);
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
 
 // Route to delete an event request
-router.delete("/event-requests/:requestId", authenticateJWT, isAdmin, async (req, res, next) => {
-  try {
-    const result = await Admin.deleteEventRequest(req.params.requestId);
-    if (!result) throw new NotFoundError("Event request not found");
-    res.json(result);
-  } catch (err) {
-    next(err);
+router.delete(
+  "/event-requests/:requestId",
+  authenticateJWT,
+  isAdmin,
+  async (req, res, next) => {
+    try {
+      const result = await Admin.deleteEventRequest(req.params.requestId);
+      if (!result) throw new NotFoundError("Event request not found");
+      res.json(result);
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
 
+//Route to delete user
+router.delete(
+  "/users/:userId",
+  authenticateJWT,
+  isAdmin,
+  async (req, res, next) => {
+    try {
+      const result = await Admin.deleteUser(req.params.userId);
+      if (!result) throw new NotFoundError("User not found");
+      res.json(result);
+    } catch (err) {
+      return next(err);
+    }
+  }
+);
 module.exports = router;
