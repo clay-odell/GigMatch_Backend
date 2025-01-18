@@ -3,15 +3,14 @@ const Admin = require("../models/admin");
 const { createToken } = require("../helpers/tokens");
 const {
   authenticateJWT,
-  isAdmin,
   ensureCorrectUserOrAdmin,
+  isAdmin,
 } = require("../middleware/auth");
 const { NotFoundError, BadRequestError } = require("../expressError");
 
 const router = express.Router();
 
-// Admin registration rou
-// te
+// Admin registration route
 router.post("/register", async (req, res, next) => {
   try {
     const newAdmin = await Admin.register(req.body);
@@ -35,101 +34,37 @@ router.post("/login", async (req, res, next) => {
 });
 
 // Route to fetch all event requests
-router.get("/event-requests", async (req, res, next) => {
+router.get("/event-requests", authenticateJWT, isAdmin, async (req, res, next) => {
   try {
-    
-    const requests = await Admin.getAllEventRequests(req.user);
-    if (!requests) {
-      throw new NotFoundError("No event requests found");
-    }
+    const requests = await Admin.getAllEventRequests();
+    if (!requests) throw new NotFoundError("No event requests found");
     return res.json(requests);
   } catch (err) {
     next(err);
   }
 });
 
-//Update user
-router.put("/:id", async (req, res, next) => {
-  try {
-    const userId = req.params.id;
-    const updateData = req.body;
-    const updatedUser = await Admin.updateUser(userId, updateData);
-    res.json(updatedUser);
-  } catch (error) {
-    next(error);
-  }
-});
-
-// Route to delete an event request
-router.delete(
-  "/event-requests/:requestId",
-  authenticateJWT,
-  ensureCorrectUserOrAdmin,
-  async (req, res, next) => {
-    try {
-      const result = await Admin.deleteEventRequest(
-        req.params.requestId,
-        req.user
-      );
-      if (!result) {
-        throw new NotFoundError("Event request not found");
-      }
-      res.json(result);
-    } catch (err) {
-      next(err);
-    }
-  }
-);
-
 // Route to update an event request
-router.put("/event-requests/:requestId", isAdmin, async (req, res, next) => {
+router.put("/event-requests/:requestId", authenticateJWT, isAdmin, async (req, res, next) => {
   try {
-    if (!req.body) {
-      throw new BadRequestError("Update data is missing");
-    }
-    const result = await Admin.updateEventRequest(
-      req.params.id,
-      req.body,
-      req.user
-    );
-    if (!result) {
-      throw new NotFoundError("Event request not found");
-    }
+    if (!req.body) throw new BadRequestError("Update data is missing");
+    const result = await Admin.updateEventRequest(req.params.requestId, req.body, req.user);
+    if (!result) throw new NotFoundError("Event request not found");
     res.json(result);
   } catch (err) {
     next(err);
   }
 });
 
-// Route to fetch all users
-router.get("/users", authenticateJWT, isAdmin, async (req, res, next) => {
+// Route to delete an event request
+router.delete("/event-requests/:requestId", authenticateJWT, isAdmin, async (req, res, next) => {
   try {
-    const users = await Admin.getAllUsers(req.user);
-    if (!users) {
-      throw new NotFoundError("No users found");
-    }
-    res.json(users);
+    const result = await Admin.deleteEventRequest(req.params.requestId);
+    if (!result) throw new NotFoundError("Event request not found");
+    res.json(result);
   } catch (err) {
     next(err);
   }
 });
-
-// Route to delete a user
-router.delete(
-  "/users/:userId",
-  authenticateJWT,
-  ensureCorrectUserOrAdmin,
-  async (req, res, next) => {
-    try {
-      const result = await Admin.deleteUser(req.params.userId, req.user);
-      if (!result) {
-        throw new NotFoundError("User not found");
-      }
-      res.json(result);
-    } catch (err) {
-      next(err);
-    }
-  }
-);
 
 module.exports = router;
