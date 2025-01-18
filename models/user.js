@@ -150,7 +150,7 @@ class User {
 
     // Generate the partial update SQL statement
     const { query, values } = sqlForPartialUpdate(
-      "Users",
+      "users",
       updateData,
       "userId",
       userId
