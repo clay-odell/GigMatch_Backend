@@ -10,7 +10,8 @@ const { NotFoundError, BadRequestError } = require("../expressError");
 
 const router = express.Router();
 
-// Admin registration route
+// Admin registration rou
+// te
 router.post("/register", async (req, res, next) => {
   try {
     const newAdmin = await Admin.register(req.body);

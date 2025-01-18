@@ -138,7 +138,7 @@ class User {
     if (!user) {
       throw new NotFoundError("User not found.");
     }
-
+  
     // Hash the new password if provided
     if (updateData.password) {
       const hashedPassword = await bcrypt.hash(
