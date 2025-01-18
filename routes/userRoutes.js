@@ -75,13 +75,13 @@ router.get("/:email", authenticateJWT, async (req, res, next) => {
 
 // Route to get user by ID
 router.get(
-  "/:id",
+  "/:userid",
   authenticateJWT,
   ensureCorrectUserOrAdmin,
   async (req, res, next) => {
     try {
       const requester = req.user;
-      const user = await User.getUserById(req.params.id, requester);
+      const user = await User.getUserById(req.params.userid, requester);
       return res.json({ user });
     } catch (err) {
       return next(err);
@@ -91,13 +91,13 @@ router.get(
 
 // Get event requests by user ID
 router.get(
-  "/events/:userId",
+  "/events/:userid",
   authenticateJWT,
   ensureCorrectUserOrAdmin,
   async (req, res, next) => {
     try {
       const eventRequests = await CalendarEventRequest.getByUserId(
-        req.params.userId
+        req.params.userid
       );
       if (!eventRequests || eventRequests.length === 0) {
         return res.json({
@@ -114,12 +114,12 @@ router.get(
 
 // Route to update a user
 router.put(
-  "/:userId",
+  "/:userid",
   authenticateJWT,
   ensureCorrectUserOrAdmin,
   async (req, res, next) => {
     try {
-      const userId = req.params.userId;
+      const userId = req.params.userid;
       const updateData = req.body;
       const updatedUser = await User.updateUser(userId, updateData);
       res.json(updatedUser);
