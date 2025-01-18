@@ -195,7 +195,7 @@ class Admin {
   }
   
   static async deleteUser(userId, requester) {
-    if (!requester || requester.userType !== "Admin") {
+    if (!requester || requester.usertype !== "Admin") {
       throw new UnauthorizedError("You are not authorized to delete this user.");
     }
   
