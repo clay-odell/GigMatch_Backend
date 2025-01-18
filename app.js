@@ -21,10 +21,14 @@ app.use('/user', userRoutes);
 app.use('/event', eventRoutes);
 app.use('/admin', adminRoutes);
 
-// Handle 404 errors -- This matches everything
+// Handle 404 errors
 app.use((req, res, next) => {
+  if (req.method === "HEAD") {
+    return res.status(404).end(); 
+  }
   return next(new NotFoundError());
 });
+
 
 // Generic error handler; anything unhandled goes here
 app.use((err, req, res, next) => {
