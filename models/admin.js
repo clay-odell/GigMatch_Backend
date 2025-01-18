@@ -7,6 +7,7 @@ const {
   BadRequestError,
   UnauthorizedError,
 } = require("../expressError");
+const { BCRYPT_WORK_FACTOR } = require("../config");
 
 class Admin {
   static async register(data) {
@@ -177,7 +178,7 @@ class Admin {
     // Hash the new password if provided
     if (updateData.password) {
       const hashedPassword = await bcrypt.hash(
-        updateData.password, BCRYPT_WORK_FACTOR
+        updateData.password, parseInt(BCRYPT_WORK_FACTOR)
       );
       updateData.password = hashedPassword;
     }
@@ -191,8 +192,7 @@ class Admin {
    
     return result.rows[0];
   }
-
-
+  
   static async deleteUser(userId, requester) {
     if (requester.userType !== "Admin") {
       throw new UnauthorizedError("You are not authorized to delete this user.");
