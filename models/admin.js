@@ -165,22 +165,32 @@ class Admin {
   static async updateUser(userId, updateData) {
     // Check if the user exists
     const userResult = await db.query(
-        `SELECT userId FROM users WHERE userId = $1`,
-        [userId]
+      `SELECT userId FROM Users WHERE userId = $1`,
+      [userId]
     );
-
+  
     const user = userResult.rows[0];
     if (!user) {
-        throw new NotFoundError("User not found.");
+      throw new NotFoundError("User not found.");
     }
-
+  
+    // Hash the new password if provided
+    if (updateData.password) {
+      const hashedPassword = await bcrypt.hash(
+        updateData.password, BCRYPT_WORK_FACTOR
+      );
+      updateData.password = hashedPassword;
+    }
+  
     // Generate the partial update SQL statement
     const { query, values } = sqlForPartialUpdate("Users", updateData, "userId", userId);
-
-    
+  
+  
+    // Execute the update query
     const result = await db.query(query, values);
+   
     return result.rows[0];
-}
+  }
 
 
   static async deleteUser(userId, requester) {
