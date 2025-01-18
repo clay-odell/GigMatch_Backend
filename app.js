@@ -13,9 +13,7 @@ const app = express();
 
 // Middleware
 app.use(express.json());
-app.use(cors({
-  origin: 'https://gigmatch-frontend-calendar-app.onrender.com'
-}));
+app.use(cors());
 app.use(morgan("tiny"));
 
 // Routes
