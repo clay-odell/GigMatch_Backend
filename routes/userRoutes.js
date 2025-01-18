@@ -123,7 +123,7 @@ router.put(
       const updateData = req.body;
       const updatedUser = await User.updateUser(userId, updateData);
       res.json(updatedUser);
-    } catch (error) {s
+    } catch (error) {
       next(error);
     }
   }
