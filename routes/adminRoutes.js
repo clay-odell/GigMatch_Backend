@@ -32,6 +32,16 @@ router.post("/login", async (req, res, next) => {
     return next(err);
   }
 });
+// Route to get all users 
+router.get("/users", authenticateJWT, isAdmin, async (req, res, next) => { 
+  try { 
+    const requester = req.user; 
+    const users = await Admin.getAllUsers(requester); 
+    if (!users.length) throw new NotFoundError("No users found."); 
+    return res.json(users); 
+  } catch (err) {
+     next(err); 
+} });
 
 // Route to fetch all event requests
 router.get("/event-requests", authenticateJWT, isAdmin, async (req, res, next) => {
