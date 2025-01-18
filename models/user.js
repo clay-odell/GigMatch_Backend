@@ -143,7 +143,7 @@ class User {
     if (updateData.password) {
       const hashedPassword = await bcrypt.hash(
         updateData.password,
-        BCRYPT_WORK_FACTOR
+        parseInt(BCRYPT_WORK_FACTOR)
       );
       updateData.password = hashedPassword;
     }
