@@ -3,8 +3,8 @@ const Admin = require("../models/admin");
 const { createToken } = require("../helpers/tokens");
 const {
   authenticateJWT,
-  ensureCorrectUserOrAdmin,
   isAdmin,
+  ensureCorrectUserOrAdmin,
 } = require("../middleware/auth");
 const { NotFoundError, BadRequestError } = require("../expressError");
 
@@ -32,28 +32,48 @@ router.post("/login", async (req, res, next) => {
     return next(err);
   }
 });
-// Route to get all users
-router.get("/users", authenticateJWT, isAdmin, async (req, res, next) => {
+
+// Route to fetch all event requests
+router.get("/event-requests", async (req, res, next) => {
   try {
-    const requester = req.user;
-    const users = await Admin.getAllUsers(requester);
-    if (!users.length) throw new NotFoundError("No users found.");
-    return res.json(users);
+    
+    const requests = await Admin.getAllEventRequests(req.user);
+    if (!requests) {
+      throw new NotFoundError("No event requests found");
+    }
+    return res.json(requests);
   } catch (err) {
     next(err);
   }
 });
 
-// Route to fetch all event requests
-router.get(
-  "/event-requests",
+//Update user
+router.put("/:id", async (req, res, next) => {
+  try {
+    const userId = req.params.id;
+    const updateData = req.body;
+    const updatedUser = await Admin.updateUser(userId, updateData);
+    res.json(updatedUser);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Route to delete an event request
+router.delete(
+  "/event-requests/:requestId",
   authenticateJWT,
-  isAdmin,
+  ensureCorrectUserOrAdmin,
   async (req, res, next) => {
     try {
-      const requests = await Admin.getAllEventRequests();
-      if (!requests) throw new NotFoundError("No event requests found");
-      return res.json(requests);
+      const result = await Admin.deleteEventRequest(
+        req.params.requestId,
+        req.user
+      );
+      if (!result) {
+        throw new NotFoundError("Event request not found");
+      }
+      res.json(result);
     } catch (err) {
       next(err);
     }
@@ -61,55 +81,54 @@ router.get(
 );
 
 // Route to update an event request
-router.put(
-  "/event-requests/:requestId",
-  authenticateJWT,
-  isAdmin,
-  async (req, res, next) => {
-    try {
-      if (!req.body) throw new BadRequestError("Update data is missing");
-      const result = await Admin.updateEventRequest(
-        req.params.requestId,
-        req.body,
-        req.user
-      );
-      if (!result) throw new NotFoundError("Event request not found");
-      res.json(result);
-    } catch (err) {
-      next(err);
+router.put("/event-requests/:requestId", isAdmin, async (req, res, next) => {
+  try {
+    if (!req.body) {
+      throw new BadRequestError("Update data is missing");
     }
-  }
-);
-
-// Route to delete an event request
-router.delete(
-  "/event-requests/:requestId",
-  authenticateJWT,
-  isAdmin,
-  async (req, res, next) => {
-    try {
-      const result = await Admin.deleteEventRequest(req.params.requestId);
-      if (!result) throw new NotFoundError("Event request not found");
-      res.json(result);
-    } catch (err) {
-      next(err);
+    const result = await Admin.updateEventRequest(
+      req.params.id,
+      req.body,
+      req.user
+    );
+    if (!result) {
+      throw new NotFoundError("Event request not found");
     }
+    res.json(result);
+  } catch (err) {
+    next(err);
   }
-);
+});
 
-//Route to delete user
+// Route to fetch all users
+router.get("/users", authenticateJWT, isAdmin, async (req, res, next) => {
+  try {
+    const users = await Admin.getAllUsers(req.user);
+    if (!users) {
+      throw new NotFoundError("No users found");
+    }
+    res.json(users);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Route to delete a user
 router.delete(
   "/users/:userId",
   authenticateJWT,
-  isAdmin,
+  ensureCorrectUserOrAdmin,
   async (req, res, next) => {
     try {
-      const result = await Admin.deleteUser(req.params.userId);
-      if (!result) throw new NotFoundError("User not found");
+      const result = await Admin.deleteUser(req.params.userId, req.user);
+      if (!result) {
+        throw new NotFoundError("User not found");
+      }
       res.json(result);
     } catch (err) {
-      return next(err);
+      next(err);
     }
   }
 );
+
 module.exports = router;

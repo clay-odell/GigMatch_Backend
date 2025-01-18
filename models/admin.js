@@ -6,15 +6,10 @@ const {
   NotFoundError,
   BadRequestError,
   UnauthorizedError,
-  ExpressError,
 } = require("../expressError");
-const { BCRYPT_WORK_FACTOR } = require("../config");
 
 class Admin {
   static async register(data) {
-    if(data.password.length < 8) {
-      throw new BadRequestError("Password must be at least 8 characters long.");
-    }
     const hashedPassword = await bcrypt.hash(data.password, 10);
     const result = await db.query(
       `INSERT INTO Users (userId, name, email, password, userType, venueName, location, artistname)
@@ -140,6 +135,79 @@ class Admin {
         requestId,
       ]
     );
+
+    if (!result.rows.length) {
+      throw new BadRequestError("There was an error updating the event request.");
+    }
+
+    return result.rows[0];
+  }
+
+  static async getAllUsers(requester) {
+    if (requester.userType !== "Admin") {
+      throw new UnauthorizedError("You are not authorized to access all users.");
+    }
+
+    const result = await db.query(
+      `SELECT userId, name, email, userType, artistName FROM Users ORDER BY email`
+    );
+
+    if (!result.rows.length) {
+      throw new NotFoundError("No users found.");
+    }
+
+    return result.rows;
+  }
+
+  static async updateUser(userId, updateData) {
+    // Check if the user exists
+    const userResult = await db.query(
+        `SELECT userId FROM users WHERE userId = $1`,
+        [userId]
+    );
+
+    const user = userResult.rows[0];
+    if (!user) {
+        throw new NotFoundError("User not found.");
+    }
+
+    // Generate the partial update SQL statement
+    const { query, values } = sqlForPartialUpdate("Users", updateData, "userId", userId);
+
+
+    const result = await db.query(query, values);
+    return result.rows[0];
+}
+
+
+  static async deleteUser(userId, requester) {
+    if (requester.userType !== "Admin") {
+      throw new UnauthorizedError("You are not authorized to delete this user.");
+    }
+
+    const userResult = await db.query(
+      `SELECT userId FROM Users WHERE userId = $1`,
+      [userId]
+    );
+
+    const user = userResult.rows[0];
+    if (!user) {
+      throw new NotFoundError("User not found.");
+    }
+
+    const result = await db.query(
+      `DELETE FROM Users WHERE userId = $1 
+       RETURNING userId, name, email, userType`,
+      [userId]
+    );
+
+    if (!result.rows.length) {
+      throw new BadRequestError("There was an error deleting the user.");
+    }
+
+    return { deleted: result.rows[0] };
+  }
+}   );
 
     if (!result.rows.length) {
       throw new BadRequestError("There was an error updating the event request.");
