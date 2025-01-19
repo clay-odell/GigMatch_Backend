@@ -2,10 +2,15 @@
 const { Client } = require("pg");
 const { getDatabaseUri } = require("./config");
 
+console.log(getDatabaseUri);
+ 
 const db = new Client({
   connectionString: getDatabaseUri(),
-  ssl: false
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
+
 
 db.connect()
   .then(() => console.log("Connected to the database"))
