@@ -4,13 +4,15 @@ const { getDatabaseUri } = require("./config");
 
 const db = new Client({
   connectionString: getDatabaseUri(),
-  ssl: false
+  ssl: {
+    rejectUnauthorized: false,
+  },
 });
 
 db.connect()
-  .then(() => console.log('Connected to the database'))
-  .catch(err => {
-    console.error('Connection error:', err.stack);
+  .then(() => console.log("Connected to the database"))
+  .catch((err) => {
+    console.error("Connection error:", err.stack);
     process.exit(1);
   });
 
