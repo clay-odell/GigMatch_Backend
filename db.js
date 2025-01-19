@@ -6,10 +6,7 @@ const path = require("path");
 
 const db = new Client({
   connectionString: getDatabaseUri(),
-  ssl: {
-    rejectUnauthorized: false,
-   
-  }
+  ssl: false,
 });
 
 db.on('error', err => {
