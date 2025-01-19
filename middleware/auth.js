@@ -20,11 +20,11 @@ const authenticateJWT = (req, res, next) => {
     const decoded = jwt.verify(token, SECRET_KEY); // Verify token
     
     
-    if (!decoded.sub || !decoded.userType) {
+    if (!decoded.sub || !decoded.usertype) {
       return next(new UnauthorizedError("Invalid access token."));
     }
     
-    req.user = { userID: decoded.sub, userType: decoded.userType }; // Set user details
+    req.user = { userID: decoded.sub, usertype: decoded.usertype }; // Set user details
     req.token = token;
     next(); // Proceed to next middleware
   } catch (error) {
@@ -34,7 +34,7 @@ const authenticateJWT = (req, res, next) => {
 
 
 const isAdmin = (req, res, next) => {
-  if (req.user && req.user.userType === "Admin") {
+  if (req.user && req.user.usertype === "Admin") {
     next();
   } else {
     next(new UnauthorizedError("Unauthorized"));
@@ -45,7 +45,7 @@ const ensureCorrectUserOrAdmin = (req, res, next) => {
   try {
     const user = req.user;
    
-    if (user && (user.userID === req.params.userID || user.userType === "Admin")) {
+    if (user && (user.userid === req.params.userid || user.usertype === "Admin")) {
       return next();
     } else {
       throw new UnauthorizedError("You are not authorized to access this resource.");
