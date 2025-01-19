@@ -13,7 +13,7 @@ const { BCRYPT_WORK_FACTOR } = require("../config");
 class User {
   static async authenticate(email, password) {
     const result = await db.query(
-      `SELECT userid, name, email, password, artistname, usertype 
+      `SELECT userId, name, email, password, artistName, userType 
          FROM users WHERE email = $1`,
       [email]
     );
@@ -42,7 +42,7 @@ class User {
     }
 
     const duplicateCheck = await db.query(
-      `SELECT userid, name, email, password, artistname, usertype FROM users WHERE email = $1`,
+      `SELECT userId, name, email, password, artistName, userType FROM users WHERE email = $1`,
       [email]
     );
 
@@ -58,9 +58,9 @@ class User {
     );
 
     const result = await db.query(
-      `INSERT INTO users (userid, name, email, password, artistname, usertype)
+      `INSERT INTO users (userId, name, email, password, artistName, userType)
        VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING userid, name, email, artistname, usertype`,
+       RETURNING userId, name, email, artistName, userType`,
       [userid, name, email, hashedPassword, artistname, usertype]
     );
 
@@ -71,7 +71,7 @@ class User {
 
   static async findAll() {
     const result = await db.query(
-      `SELECT name, email, usertype, artistname FROM users ORDER BY email`
+      `SELECT name, email, userType, artistName FROM users ORDER BY email`
     );
 
     if (!result.rows.length) throw new NotFoundError("No users found");
@@ -80,7 +80,7 @@ class User {
 
   static async getUser(email) {
     const result = await db.query(
-      `SELECT name, email, artistname, usertype FROM users WHERE email = $1`,
+      `SELECT name, email, artistName, userType FROM users WHERE email = $1`,
       [email]
     );
 
@@ -90,20 +90,20 @@ class User {
     return user;
   }
 
-  static async getUserById(id, requester) {
+  static async getUserById(userId, requester) {
     if (!requester) {
       throw new UnauthorizedError("Requester information is missing.");
     }
-    if (requester.usertype !== "admin" && requester.userid !== id) {
+    if (requester.userType !== "admin" && requester.userId !== userId) {
       throw new UnauthorizedError(
         "You are not authorized to access this user."
       );
     }
 
     const result = await db.query(
-      `SELECT userid, name, email, password, artistname, usertype 
+      `SELECT userId, name, email, password, artistName, userType 
       FROM users WHERE userid = $1`,
-      [id]
+      [userId]
     );
 
     const user = result.rows[0];
@@ -112,17 +112,17 @@ class User {
     return user;
   }
 
-  static async getEventRequestsByUserId(userid, requester) {
-    if (requester.usertype !== "admin" && requester.userid !== userid) {
+  static async getEventRequestsByUserId(userId, requester) {
+    if (requester.userType !== "admin" && requester.userid !== userId) {
       throw new UnauthorizedError(
         "You are not authorized to access these requests."
       );
     }
 
     const result = await db.query(
-      `SELECT requestid, eventid, userid, status, requestdate, starttime, endtime, amount, artistname 
-      FROM calendareventrequests WHERE userid = $1`,
-      [userid]
+      `SELECT requestId, eventId, userId, status, requestDate, startTime, endTime, amount, artistName 
+      FROM CalendarEventRequests WHERE userId = $1`,
+      [userId]
     );
 
     return result.rows;
@@ -131,7 +131,7 @@ class User {
   static async updateUser(userid, updateData) {
     // Check if the user exists
     const userResult = await db.query(
-      `SELECT userid, password FROM users WHERE userid = $1`,
+      `SELECT userId, password FROM users WHERE userId = $1`,
       [userid]
     );
 

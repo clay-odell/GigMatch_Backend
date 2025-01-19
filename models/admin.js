@@ -42,7 +42,7 @@ class Admin {
     }
 
     const duplicateCheck = await db.query(
-      `SELECT userid, email FROM users WHERE email = $1`,
+      `SELECT userId, email FROM users WHERE email = $1`,
       [email]
     );
 
@@ -54,9 +54,9 @@ class Admin {
     const hashedPassword = await bcrypt.hash(password, parseInt(BCRYPT_WORK_FACTOR));
 
     const result = await db.query(
-      `INSERT INTO users (userid, name, email, password, usertype, venuename, location, artistname)
+      `INSERT INTO Users (userId, name, email, password, userType, venueName, location, artistName)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       RETURNING userid, name, email, usertype, venuename, location, artistname`,
+       RETURNING userId, name, email, userType, venueName, location, artistName`,
       [userid, name, email, hashedPassword, "Admin", venuename, location, artistname]
     );
 
@@ -71,8 +71,8 @@ class Admin {
     }
 
     const result = await db.query(
-      `SELECT requestid, eventid, userid, status, requestdate, starttime, endtime, amount, artistname, eventname  
-       FROM calendareventrequests`,
+      `SELECT requestId, eventId, userId, status, requestDate, startTime, endTime, amount, artistName, eventName  
+       FROM CalendarEventRequests`,
     );
 
     if (!result.rows.length) {
@@ -88,7 +88,7 @@ class Admin {
     }
 
     const eventResult = await db.query(
-      `SELECT requestid FROM calendareventrequests WHERE requestid = $1`,
+      `SELECT requestId FROM CalendarEventRequests WHERE requestId = $1`,
       [requestid]
     );
 
@@ -98,8 +98,8 @@ class Admin {
     }
 
     const result = await db.query(
-      `DELETE FROM calendareventrequests WHERE requestid = $1 
-       RETURNING requestid, eventid, userid, status, requestdate, starttime, endtime, amount`,
+      `DELETE FROM CalendarEventRequests WHERE requestId = $1 
+       RETURNING requestId, eventId, userId, status, requestDate, startTime, endTime, amount`,
       [requestid]
     );
 
@@ -111,12 +111,12 @@ class Admin {
   }
 
   static async updateEventRequest(requestid, updateData, requester) {
-    if (requester.usertype !== "Admin") {
+    if (requester.userType !== "Admin") {
       throw new UnauthorizedError("You are not authorized to update this request.");
     }
 
     const eventResult = await db.query(
-      `SELECT requestid FROM calendareventrequests WHERE requestid = $1`,
+      `SELECT requestid FROM CalendarEventRequests WHERE requestId = $1`,
       [requestid]
     );
 
@@ -142,12 +142,12 @@ class Admin {
   }
 
   static async getAllUsers(requester) {
-    if (requester.usertype !== "Admin") {
+    if (requester.userType !== "Admin") {
       throw new UnauthorizedError("You are not authorized to access all users.");
     }
 
     const result = await db.query(
-      `SELECT userid, name, email, usertype, artistname 
+      `SELECT userId, name, email, userType, artistName 
        FROM users ORDER BY email`
     );
 
@@ -160,7 +160,7 @@ class Admin {
 
   static async updateUser(userid, updateData) {
     const userResult = await db.query(
-      `SELECT userid, password FROM users WHERE userid = $1`,
+      `SELECT userId, password FROM users WHERE Userid = $1`,
       [userid]
     );
 
@@ -174,7 +174,7 @@ class Admin {
     } else if (updateData.password && updateData.password.length < 8) {
       throw new BadRequestError("Password must be at least 8 characters");
     } else if (updateData.password) {
-      const hashedPassword = await bcrypt.hash(updateData.password, BCRYPT_WORK_FACTOR);
+      const hashedPassword = await bcrypt.hash(updateData.password, parseInt(BCRYPT_WORK_FACTOR));
       updateData.password = hashedPassword;
     }
 
@@ -190,12 +190,12 @@ class Admin {
   }
 
   static async deleteUser(userid, requester) {
-    if (!requester || requester.usertype !== "Admin") {
+    if (!requester || requester.userType !== "Admin") {
       throw new UnauthorizedError("You are not authorized to delete this user.");
     }
 
     const userResult = await db.query(
-      `SELECT userid FROM users WHERE userid = $1`,
+      `SELECT userId FROM users WHERE userId = $1`,
       [userid]
     );
 
@@ -205,8 +205,8 @@ class Admin {
     }
 
     const result = await db.query(
-      `DELETE FROM users WHERE userid = $1 
-       RETURNING userid, name, email, usertype`,
+      `DELETE FROM users WHERE userId = $1 
+       RETURNING userId, name, email, userType`,
       [userid]
     );
 
