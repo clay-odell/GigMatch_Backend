@@ -51,7 +51,7 @@ class Admin {
     }
 
     const userid = uuidv4();
-    const hashedPassword = await bcrypt.hash(password, BCRYPT_WORK_FACTOR);
+    const hashedPassword = await bcrypt.hash(password, parseInt(BCRYPT_WORK_FACTOR));
 
     const result = await db.query(
       `INSERT INTO users (userid, name, email, password, usertype, venuename, location, artistname)
