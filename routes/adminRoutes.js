@@ -6,7 +6,7 @@ const {
   isAdmin,
   ensureCorrectUserOrAdmin,
 } = require("../middleware/auth");
-const { NotFoundError, BadRequestError } = require("../expressError");
+const { NotFoundError, UnauthorizedError, BadRequestError } = require("../expressError");
 
 const router = express.Router();
 
