@@ -25,7 +25,7 @@ router.post("/login", async (req, res, next) => {
   try {
     const { email, password } = req.body;
     const admin = await Admin.authenticate(email, password);  // Use Admin.authenticate instead of User.authenticate
-
+    console.log("Admin Usertype", admin.usertype);
     if (admin.usertype !== 'Admin') {
       throw new UnauthorizedError("User is not an admin");
     }
