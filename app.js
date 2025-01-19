@@ -11,7 +11,7 @@ const app = express();
 
 // Middleware
 app.use(express.json());
-app.use(cors());
+app.use(cors({ origin: "https://gigmatch-frontend-calendar-app.onrender.com" })); // Allow requests from specific frontend URL
 app.use(morgan("tiny"));
 
 // API Routes
@@ -19,6 +19,14 @@ app.use("/user", require("./routes/userRoutes"));
 app.use("/event", require("./routes/eventRequest"));
 app.use("/admin", require("./routes/adminRoutes"));
 
+// Serve static assets if in production
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(path.join(__dirname, "frontend", "dist")));
+
+  app.get("*", (req, res) => {
+    res.sendFile(path.resolve(__dirname, "frontend", "dist", "index.html"));
+  });
+}
 
 // Handle 404 errors
 app.use((req, res, next) => {
