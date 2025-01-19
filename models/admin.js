@@ -7,6 +7,8 @@ const {
   BadRequestError,
   UnauthorizedError,
 } = require("../expressError");
+const { BCRYPT_WORK_FACTOR } = require("../config");
+const { createToken } = require("../helpers/tokens");
 
 class Admin {
   static async authenticate(email, password) {
@@ -29,7 +31,23 @@ class Admin {
   
 
   static async register(data) {
-    const hashedPassword = await bcrypt.hash(data.password, 10);
+    if (data.password.length < 8) {
+      throw new BadRequestError("Password must be at least 8 characters in length");
+    }
+  
+    const duplicateCheck = await db.query(
+      `SELECT userId, name, email, userType, password, location, artistName 
+       FROM Users 
+       WHERE email = $1`,
+      [data.email]
+    );
+    
+    if (duplicateCheck.rows[0]) {
+      console.error("Existing user found:", duplicateCheck.rows[0]);
+      throw new BadRequestError("Email is already registered.");
+    }
+  
+    const hashedPassword = await bcrypt.hash(data.password, parseInt(BCRYPT_WORK_FACTOR));
     const result = await db.query(
       `INSERT INTO Users (userId, name, email, password, userType, venueName, location, artistname)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
@@ -39,46 +57,18 @@ class Admin {
         data.name,
         data.email,
         hashedPassword,
-        'Admin',
+        'Admin', // Ensure that 'Admin' is passed as the userType
         data.venueName,
         data.location,
-        data.artistname,
+        data.artistname
       ]
     );
-
-    const user = result.rows[0];
-
-    if (!user) {
-      throw new BadRequestError("There was an error creating the admin user.");
-    }
-
-    return user;
+  
+    const admin = result.rows[0];
+    const token = createToken(admin);
+    return { admin, token };
   }
-
-  static async login(email, password) {
-    const result = await db.query(
-      `SELECT userId, name, email, password, userType, venueName, location, artistName
-       FROM Users
-       WHERE email = $1`,
-      [email]
-    );
-
-    const user = result.rows[0];
-
-    if (!user) {
-      throw new UnauthorizedError("Invalid email/password.");
-    }
-
-    const isValid = await bcrypt.compare(password, user.password);
-
-    if (!isValid) {
-      throw new UnauthorizedError("Invalid email/password.");
-    }
-
-    delete user.password; 
-
-    return user;
-  }
+  
 
   static async getAllEventRequests(requester) {
     if (requester.usertype !== "Admin") {
