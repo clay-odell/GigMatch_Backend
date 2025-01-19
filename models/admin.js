@@ -1,38 +1,40 @@
 const db = require("../db");
-const { v4: uuidv4 } = require("uuid");
-const { sqlForPartialUpdate } = require('../helpers/sqlForPartialUpdate');
 const bcrypt = require("bcrypt");
+const { v4: uuidv4 } = require("uuid");
 const {
   NotFoundError,
   BadRequestError,
   UnauthorizedError,
 } = require("../expressError");
-const { BCRYPT_WORK_FACTOR } = require('../config');
+const { sqlForPartialUpdate } = require("../helpers/sqlForPartialUpdate");
+const { BCRYPT_WORK_FACTOR } = require("../config");
 
 class Admin {
   static async register(data) {
     if (data.password.length < 8) {
       throw new BadRequestError("Password must be at least 8 characters");
     }
-    const hashedPassword = await bcrypt.hash(data.password, parseInt(BCRYPT_WORK_FACTOR));
+    const hashedPassword = await bcrypt.hash(
+      data.password,
+      parseInt(BCRYPT_WORK_FACTOR)
+    );
     const result = await db.query(
-      `INSERT INTO Users (userId, name, email, password, userType, venueName, location, artistName)
+      `INSERT INTO users (userid, name, email, password, usertype, venuename, location, artistname)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       RETURNING userId, name, email, userType, venueName, location, artistName`,
+       RETURNING userid, name, email, usertype, venuename, location, artistname`,
       [
         uuidv4(),
         data.name,
         data.email,
         hashedPassword,
-        'Admin',
-        data.venueName,
+        "Admin",
+        data.venuename,
         data.location,
-        data.artistName,
+        data.artistname,
       ]
     );
 
     const user = result.rows[0];
-
     if (!user) {
       throw new BadRequestError("There was an error creating the admin user.");
     }
@@ -42,37 +44,37 @@ class Admin {
 
   static async login(email, password) {
     const result = await db.query(
-      `SELECT userId, name, email, password, userType, venueName, location, artistName
-       FROM Users
+      `SELECT userid, name, email, password, usertype, venuename, location, artistname
+       FROM users
        WHERE email = $1`,
       [email]
     );
 
     const user = result.rows[0];
-
     if (!user) {
       throw new UnauthorizedError("Invalid email/password.");
     }
 
     const isValid = await bcrypt.compare(password, user.password);
-
     if (!isValid) {
       throw new UnauthorizedError("Invalid email/password.");
     }
 
-    delete user.password; // Remove password from user object before returning
+    delete user.password; // Exclude password from the user object
 
     return user;
   }
 
   static async getAllEventRequests(requester) {
-    if (requester.userType !== "Admin") {
-      throw new UnauthorizedError("You are not authorized to access all requests.");
+    if (requester.usertype !== "Admin") {
+      throw new UnauthorizedError(
+        "You are not authorized to access all requests."
+      );
     }
 
     const result = await db.query(
-      `SELECT requestId, eventId, userId, status, requestDate, startTime, endTime, amount, artistName, eventName  
-       FROM CalendarEventRequests`
+      `SELECT requestid, eventid, userid, status, requestdate, starttime, endtime, amount, artistname, eventname  
+       FROM calendareventrequests`
     );
 
     if (!result.rows.length) {
@@ -82,14 +84,16 @@ class Admin {
     return result.rows;
   }
 
-  static async deleteEventRequest(requestId, requester) {
-    if (requester.userType !== "Admin") {
-      throw new UnauthorizedError("You are not authorized to delete this request.");
+  static async deleteEventRequest(requestid, requester) {
+    if (requester.usertype !== "Admin") {
+      throw new UnauthorizedError(
+        "You are not authorized to delete this request."
+      );
     }
 
     const eventResult = await db.query(
-      `SELECT requestId FROM CalendarEventRequests WHERE requestId = $1`,
-      [requestId]
+      `SELECT requestid FROM calendareventrequests WHERE requestid = $1`,
+      [requestid]
     );
 
     const event = eventResult.rows[0];
@@ -98,26 +102,30 @@ class Admin {
     }
 
     const result = await db.query(
-      `DELETE FROM CalendarEventRequests WHERE requestId = $1 
-       RETURNING requestId, eventId, userId, status, requestDate, startTime, endTime, amount`,
-      [requestId]
+      `DELETE FROM calendareventrequests WHERE requestid = $1 
+       RETURNING requestid, eventid, userid, status, requestdate, starttime, endtime, amount`,
+      [requestid]
     );
 
     if (!result.rows.length) {
-      throw new BadRequestError("There was an error deleting the event request.");
+      throw new BadRequestError(
+        "There was an error deleting the event request."
+      );
     }
 
     return { deleted: result.rows[0] };
   }
 
-  static async updateEventRequest(requestId, updateData, requester) {
-    if (requester.userType !== "Admin") {
-      throw new UnauthorizedError("You are not authorized to update this request.");
+  static async updateEventRequest(requestid, updateData, requester) {
+    if (requester.usertype !== "Admin") {
+      throw new UnauthorizedError(
+        "You are not authorized to update this request."
+      );
     }
 
     const eventResult = await db.query(
-      `SELECT requestId FROM CalendarEventRequests WHERE requestId = $1`,
-      [requestId]
+      `SELECT requestid FROM calendareventrequests WHERE requestid = $1`,
+      [requestid]
     );
 
     const event = eventResult.rows[0];
@@ -126,34 +134,38 @@ class Admin {
     }
 
     const result = await db.query(
-      `UPDATE CalendarEventRequests
-       SET status = $1, requestDate = $2, startTime = $3, endTime = $4, amount = $5
-       WHERE requestId = $6
-       RETURNING requestId, eventId, userId, status, requestDate, startTime, endTime, amount`,
+      `UPDATE calendareventrequests
+       SET status = $1, requestdate = $2, starttime = $3, endtime = $4, amount = $5
+       WHERE requestid = $6
+       RETURNING requestid, eventid, userid, status, requestdate, starttime, endtime, amount`,
       [
         updateData.status,
-        updateData.requestDate,
-        updateData.startTime,
-        updateData.endTime,
+        updateData.requestdate,
+        updateData.starttime,
+        updateData.endtime,
         updateData.amount,
-        requestId,
+        requestid,
       ]
     );
 
     if (!result.rows.length) {
-      throw new BadRequestError("There was an error updating the event request.");
+      throw new BadRequestError(
+        "There was an error updating the event request."
+      );
     }
 
     return result.rows[0];
   }
 
   static async getAllUsers(requester) {
-    if (requester.userType !== "Admin") {
-      throw new UnauthorizedError("You are not authorized to access all users.");
+    if (requester.usertype !== "Admin") {
+      throw new UnauthorizedError(
+        "You are not authorized to access all users."
+      );
     }
 
     const result = await db.query(
-      `SELECT userId, name, email, userType, artistName FROM Users ORDER BY email`
+      `SELECT userid, name, email, usertype, artistname FROM users ORDER BY email`
     );
 
     if (!result.rows.length) {
@@ -163,11 +175,11 @@ class Admin {
     return result.rows;
   }
 
-  static async updateUser(userId, updateData) {
+  static async updateUser(userid, updateData) {
     // Check if the user exists
     const userResult = await db.query(
-      `SELECT userId, password FROM Users WHERE userId = $1`,
-      [userId]
+      `SELECT userid, password FROM users WHERE userid = $1`,
+      [userid]
     );
 
     const user = userResult.rows[0];
@@ -177,53 +189,24 @@ class Admin {
 
     // Check if password is provided and valid, otherwise use current password
     if (updateData.password && updateData.password.length === 0) {
-        updateData.password = user.password; // Retain current password if new password is blank
+      updateData.password = user.password; // Retain current password if new password is blank
     } else if (updateData.password && updateData.password.length < 8) {
-        throw new BadRequestError("Password must be at least 8 characters");
-    } else if (updateData.password) {
-        const hashedPassword = await bcrypt.hash(
-            updateData.password,
-            parseInt(BCRYPT_WORK_FACTOR)
-        );
-        updateData.password = hashedPassword;
-    }
-
-    // Generate the partial update SQL statement
-    const { query, values } = sqlForPartialUpdate("Users", updateData, "userId", userId);
-
-    // Execute the update query
-    const result = await db.query(query, values);
-
-    if (!result.rows.length) {
-      throw new BadRequestError("There was an error updating the user.");
-    }
-
-    return result.rows[0];
-}
- static async updateUser(userId, updateData) {
-    // Check if the user exists
-    const userResult = await db.query(
-      `SELECT userId FROM Users WHERE userId = $1`,
-      [userId]
-    );
-
-    const user = userResult.rows[0];
-    if (!user) {
-      throw new NotFoundError("User not found.");
-    }
-    if (updateData.password && updateData.password.length < 8) {
       throw new BadRequestError("Password must be at least 8 characters");
-    }
-    // Hash the new password if provided
-    if (updateData.password) {
+    } else if (updateData.password) {
       const hashedPassword = await bcrypt.hash(
-        updateData.password, parseInt(BCRYPT_WORK_FACTOR) 
+        updateData.password,
+        parseInt(BCRYPT_WORK_FACTOR)
       );
       updateData.password = hashedPassword;
     }
 
     // Generate the partial update SQL statement
-    const { query, values } = sqlForPartialUpdate("Users", updateData, "userId", userId);
+    const { query, values } = sqlForPartialUpdate(
+      "users",
+      updateData,
+      "userid",
+      userid
+    );
 
     // Execute the update query
     const result = await db.query(query, values);
@@ -235,14 +218,16 @@ class Admin {
     return result.rows[0];
   }
 
-  static async deleteUser(userId, requester) {
-    if (!requester || requester.userType !== "Admin") {
-      throw new UnauthorizedError("You are not authorized to delete this user.");
+  static async deleteUser(userid, requester) {
+    if (!requester || requester.usertype !== "Admin") {
+      throw new UnauthorizedError(
+        "You are not authorized to delete this user."
+      );
     }
 
     const userResult = await db.query(
-      `SELECT userId FROM Users WHERE userId = $1`,
-      [userId]
+      `SELECT userid FROM users WHERE userid = $1`,
+      [userid]
     );
 
     const user = userResult.rows[0];
@@ -251,9 +236,9 @@ class Admin {
     }
 
     const result = await db.query(
-      `DELETE FROM Users WHERE userId = $1 
-       RETURNING userId, name, email, userType`,
-      [userId]
+      `DELETE FROM users WHERE userid = $1 
+       RETURNING userid, name, email, usertype`,
+      [userid]
     );
 
     if (!result.rows.length) {

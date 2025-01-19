@@ -13,8 +13,8 @@ const { BCRYPT_WORK_FACTOR } = require("../config");
 class User {
   static async authenticate(email, password) {
     const result = await db.query(
-      `SELECT userId, name, email, password, artistName, userType 
-         FROM Users WHERE email = $1`,
+      `SELECT userid, name, email, password, artistname, usertype 
+         FROM users WHERE email = $1`,
       [email]
     );
 
@@ -34,14 +34,15 @@ class User {
     name,
     email,
     password,
-    artistName,
-    userType = "Artist",
+    artistname,
+    usertype = "Artist",
   }) {
     if (password.length < 8) {
       throw new BadRequestError("Password must be at least 8 characters.");
     }
+
     const duplicateCheck = await db.query(
-      `SELECT userId, name, email, password, artistName, userType FROM Users WHERE email = $1`,
+      `SELECT userid, name, email, password, artistname, usertype FROM users WHERE email = $1`,
       [email]
     );
 
@@ -50,17 +51,17 @@ class User {
       throw new BadRequestError("Email is already registered.");
     }
 
-    const userId = uuidv4();
+    const userid = uuidv4();
     const hashedPassword = await bcrypt.hash(
       password,
       parseInt(BCRYPT_WORK_FACTOR)
     );
 
     const result = await db.query(
-      `INSERT INTO Users (userId, name, email, password, artistName, userType)
+      `INSERT INTO users (userid, name, email, password, artistname, usertype)
        VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING userId, name, email, artistName, userType`,
-      [userId, name, email, hashedPassword, artistName, userType]
+       RETURNING userid, name, email, artistname, usertype`,
+      [userid, name, email, hashedPassword, artistname, usertype]
     );
 
     const user = result.rows[0];
@@ -70,7 +71,7 @@ class User {
 
   static async findAll() {
     const result = await db.query(
-      `SELECT name, email, userType, artistName FROM Users ORDER BY email`
+      `SELECT name, email, usertype, artistname FROM users ORDER BY email`
     );
 
     if (!result.rows.length) throw new NotFoundError("No users found");
@@ -79,7 +80,7 @@ class User {
 
   static async getUser(email) {
     const result = await db.query(
-      `SELECT name, email, artistName, userType FROM Users WHERE email = $1`,
+      `SELECT name, email, artistname, usertype FROM users WHERE email = $1`,
       [email]
     );
 
@@ -93,15 +94,15 @@ class User {
     if (!requester) {
       throw new UnauthorizedError("Requester information is missing.");
     }
-    if (requester.userType !== "admin" && requester.userId !== id) {
+    if (requester.usertype !== "admin" && requester.userid !== id) {
       throw new UnauthorizedError(
         "You are not authorized to access this user."
       );
     }
 
     const result = await db.query(
-      `SELECT userId, name, email, password, artistName, userType 
-      FROM Users WHERE userId = $1`,
+      `SELECT userid, name, email, password, artistname, usertype 
+      FROM users WHERE userid = $1`,
       [id]
     );
 
@@ -111,65 +112,61 @@ class User {
     return user;
   }
 
-  static async getEventRequestsByUserId(userId, requester) {
-    if (requester.userType !== "admin" && requester.userId !== userId) {
+  static async getEventRequestsByUserId(userid, requester) {
+    if (requester.usertype !== "admin" && requester.userid !== userid) {
       throw new UnauthorizedError(
         "You are not authorized to access these requests."
       );
     }
 
     const result = await db.query(
-      `SELECT requestId, eventId, userId, status, requestDate, startTime, endTime, amount, artistName 
-      FROM CalendarEventRequests WHERE userId = $1`,
-      [userId]
+      `SELECT requestid, eventid, userid, status, requestdate, starttime, endtime, amount, artistname 
+      FROM calendareventrequests WHERE userid = $1`,
+      [userid]
     );
 
     return result.rows;
   }
 
-  static async updateUser(userId, updateData) {
+  static async updateUser(userid, updateData) {
     // Check if the user exists
     const userResult = await db.query(
-        `SELECT userId, password FROM Users WHERE userId = $1`,
-        [userId]
+      `SELECT userid, password FROM users WHERE userid = $1`,
+      [userid]
     );
 
     const user = userResult.rows[0];
-    if (!user) {
-        throw new NotFoundError("User not found.");
-    }
+    if (!user) throw new NotFoundError("User not found.");
 
     // Check if password is provided and valid, otherwise use current password
     if (updateData.password && updateData.password.length === 0) {
-        updateData.password = user.password; // Retain the current password
+      updateData.password = user.password; // Retain the current password
     } else if (updateData.password && updateData.password.length < 8) {
-        throw new BadRequestError("Password must be at least 8 characters");
+      throw new BadRequestError("Password must be at least 8 characters");
     } else if (updateData.password) {
-        const hashedPassword = await bcrypt.hash(
-            updateData.password,
-            parseInt(BCRYPT_WORK_FACTOR)
-        );
-        updateData.password = hashedPassword;
+      const hashedPassword = await bcrypt.hash(
+        updateData.password,
+        parseInt(BCRYPT_WORK_FACTOR)
+      );
+      updateData.password = hashedPassword;
     }
-    
+
     // Generate the partial update SQL statement
     const { query, values } = sqlForPartialUpdate(
-        "users",
-        updateData,
-        "userid",
-        userId
+      "users",
+      updateData,
+      "userid",
+      userid
     );
 
     // Execute the update query
     const result = await db.query(query, values);
 
-    if (!result.rows.length) {
-        throw new BadRequestError("There was an error updating the user.");
-    }
+    if (!result.rows.length)
+      throw new BadRequestError("There was an error updating the user.");
 
     return result.rows[0];
-}
-
+  }
 }
 
 module.exports = User;
