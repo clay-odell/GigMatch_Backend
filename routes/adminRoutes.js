@@ -6,7 +6,7 @@ const {
   isAdmin,
   ensureCorrectUserOrAdmin,
 } = require("../middleware/auth");
-const { NotFoundError, UnauthorizedError, BadRequestError } = require("../expressError");
+const { NotFoundError, BadRequestError } = require("../expressError");
 
 const router = express.Router();
 
@@ -21,26 +21,22 @@ router.post("/register", async (req, res, next) => {
   }
 });
 
+// Admin login route
 router.post("/login", async (req, res, next) => {
   try {
     const { email, password } = req.body;
-    const admin = await Admin.authenticate(email, password);  // Use Admin.authenticate instead of User.authenticate
-    console.log("Admin Usertype", admin.usertype);
-    if (admin.usertype !== 'Admin') {
-      throw new UnauthorizedError("User is not an admin");
-    }
-
-    const token = createToken(admin);  // Create token with admin details
+    const admin = await Admin.login(email, password);
+    const token = createToken(admin);
     return res.json({ token, admin });
   } catch (err) {
     return next(err);
   }
 });
 
-
 // Route to fetch all event requests
 router.get("/event-requests", async (req, res, next) => {
   try {
+    
     const requests = await Admin.getAllEventRequests(req.user);
     if (!requests) {
       throw new NotFoundError("No event requests found");
@@ -51,12 +47,12 @@ router.get("/event-requests", async (req, res, next) => {
   }
 });
 
-// Update user
-router.put("/:userid", async (req, res, next) => { // Matching param name to your schema
+//Update user
+router.put("/:id", async (req, res, next) => {
   try {
-    const userid = req.params.userid;
+    const userId = req.params.id;
     const updateData = req.body;
-    const updatedUser = await Admin.updateUser(userid, updateData);
+    const updatedUser = await Admin.updateUser(userId, updateData);
     res.json(updatedUser);
   } catch (error) {
     next(error);
@@ -65,13 +61,13 @@ router.put("/:userid", async (req, res, next) => { // Matching param name to you
 
 // Route to delete an event request
 router.delete(
-  "/event-requests/:requestid",
+  "/event-requests/:requestId",
   authenticateJWT,
   ensureCorrectUserOrAdmin,
   async (req, res, next) => {
     try {
       const result = await Admin.deleteEventRequest(
-        req.params.requestid,
+        req.params.requestId,
         req.user
       );
       if (!result) {
@@ -85,13 +81,13 @@ router.delete(
 );
 
 // Route to update an event request
-router.put("/event-requests/:requestid", isAdmin, async (req, res, next) => {
+router.put("/event-requests/:requestId", isAdmin, async (req, res, next) => {
   try {
     if (!req.body) {
       throw new BadRequestError("Update data is missing");
     }
     const result = await Admin.updateEventRequest(
-      req.params.requestid,
+      req.params.id,
       req.body,
       req.user
     );
@@ -105,9 +101,8 @@ router.put("/event-requests/:requestid", isAdmin, async (req, res, next) => {
 });
 
 // Route to fetch all users
-router.get("/users",  isAdmin, async (req, res, next) => {
+router.get("/users", authenticateJWT, isAdmin, async (req, res, next) => {
   try {
-
     const users = await Admin.getAllUsers(req.user);
     if (!users) {
       throw new NotFoundError("No users found");
@@ -120,12 +115,12 @@ router.get("/users",  isAdmin, async (req, res, next) => {
 
 // Route to delete a user
 router.delete(
-  "/users/:userid",
+  "/users/:userId",
   authenticateJWT,
   ensureCorrectUserOrAdmin,
   async (req, res, next) => {
     try {
-      const result = await Admin.deleteUser(req.params.userid, req.user);
+      const result = await Admin.deleteUser(req.params.userId, req.user);
       if (!result) {
         throw new NotFoundError("User not found");
       }

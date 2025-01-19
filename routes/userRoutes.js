@@ -10,7 +10,7 @@ const {
   UnauthorizedError,
   NotFoundError,
 } = require("../expressError");
-const CalendarEventRequest = require("../models/calendarEventRequest");
+const CalendarEventRequest = require("../models/calendarEventRequest"); // Ensure this is imported correctly
 
 // Route for user login
 router.post("/login", async (req, res, next) => {
@@ -33,24 +33,18 @@ router.post("/login", async (req, res, next) => {
 // Route for user registration
 router.post("/register", async (req, res, next) => {
   try {
-    const { name, email, password, usertype, artistname } = req.body;
-    if (!name || !email || !password || !usertype) {
-      throw new BadRequestError("All fields are required.");
-    }
+    const { name, email, password, userType, artistName } = req.body;
     const { user, token } = await User.register({
       name,
       email,
       password,
-      artistname,
-      usertype,
+      artistName,
+      userType,
     });
 
     // Respond with the token and new user information
     return res.status(201).json({ token, user });
   } catch (err) {
-    if (err.message.includes("duplicate key value violates unique constraint")) {
-      return next(new BadRequestError("User already exists."));
-    }
     return next(err);
   }
 });
@@ -77,13 +71,13 @@ router.get("/:email", authenticateJWT, async (req, res, next) => {
 
 // Route to get user by ID
 router.get(
-  "/:userid",
+  "/:id",
   authenticateJWT,
   ensureCorrectUserOrAdmin,
   async (req, res, next) => {
     try {
       const requester = req.user;
-      const user = await User.getUserById(req.params.userid, requester);
+      const user = await User.getUserById(req.params.id, requester);
       return res.json({ user });
     } catch (err) {
       return next(err);
@@ -93,13 +87,13 @@ router.get(
 
 // Get event requests by user ID
 router.get(
-  "/events/:userid",
+  "/events/:userId",
   authenticateJWT,
   ensureCorrectUserOrAdmin,
   async (req, res, next) => {
     try {
       const eventRequests = await CalendarEventRequest.getByUserId(
-        req.params.userid
+        req.params.userId
       );
       if (!eventRequests || eventRequests.length === 0) {
         return res.json({
@@ -116,12 +110,12 @@ router.get(
 
 // Route to update a user
 router.put(
-  "/:userid",
+  "/:userId",
   authenticateJWT,
   ensureCorrectUserOrAdmin,
   async (req, res, next) => {
     try {
-      const userId = req.params.userid;
+      const userId = req.params.userId;
       const updateData = req.body;
       const updatedUser = await User.updateUser(userId, updateData);
       res.json(updatedUser);

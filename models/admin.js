@@ -1,68 +1,64 @@
 const db = require("../db");
-const bcrypt = require("bcrypt");
 const { v4: uuidv4 } = require("uuid");
-const { NotFoundError, BadRequestError, UnauthorizedError } = require("../expressError");
-const { BCRYPT_WORK_FACTOR } = require("../config");
-const { createToken } = require("../helpers/tokens");  
-const { sqlForPartialUpdate } = require("../helpers/sqlForPartialUpdate");
+const {sqlForPartialUpdate} = require('../helpers/sqlForPartialUpdate');
+const bcrypt = require("bcrypt");
+const {
+  NotFoundError,
+  BadRequestError,
+  UnauthorizedError,
+} = require("../expressError");
 
 class Admin {
-  static async authenticate(email, password) {
+  static async register(data) {
+    const hashedPassword = await bcrypt.hash(data.password, 10);
     const result = await db.query(
-      `SELECT userid, name, email, password, usertype, venuename, location, artistname
-       FROM users WHERE email = $1`,
-      [email]
+      `INSERT INTO Users (userId, name, email, password, userType, venueName, location, artistname)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING userId, name, email, userType, venueName, location, artistname`,
+      [
+        uuidv4(),
+        data.name,
+        data.email,
+        hashedPassword,
+        'Admin',
+        data.venueName,
+        data.location,
+        data.artistname,
+      ]
     );
 
-    const admin = result.rows[0];
-    if (!admin) {
-      throw new NotFoundError("Admin not found");
+    const user = result.rows[0];
+
+    if (!user) {
+      throw new BadRequestError("There was an error creating the admin user.");
     }
 
-    const isValid = await bcrypt.compare(password, admin.password);
-    if (!isValid) {
-      throw new UnauthorizedError("Invalid email/password");
-    }
-
-    const { password: _password, ...adminWithoutPassword } = admin;
-    const token = createToken(adminWithoutPassword);
-    return { admin: adminWithoutPassword, token };
+    return user;
   }
 
-  static async register({
-    name,
-    email,
-    password,
-    venuename,
-    location,
-    artistname,
-  }) {
-    if (password.length < 8) {
-      throw new BadRequestError("Password must be at least 8 characters.");
-    }
-
-    const duplicateCheck = await db.query(
-      `SELECT userId, email FROM users WHERE email = $1`,
+  static async login(email, password) {
+    const result = await db.query(
+      `SELECT userId, name, email, password, userType, venueName, location, artistName
+       FROM Users
+       WHERE email = $1`,
       [email]
     );
 
-    if (duplicateCheck.rows[0]) {
-      throw new BadRequestError("Email is already registered.");
+    const user = result.rows[0];
+
+    if (!user) {
+      throw new UnauthorizedError("Invalid email/password.");
     }
 
-    const userid = uuidv4();
-    const hashedPassword = await bcrypt.hash(password, parseInt(BCRYPT_WORK_FACTOR));
+    const isValid = await bcrypt.compare(password, user.password);
 
-    const result = await db.query(
-      `INSERT INTO Users (userId, name, email, password, userType, venueName, location, artistName)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       RETURNING userId, name, email, userType, venueName, location, artistName`,
-      [userid, name, email, hashedPassword, "Admin", venuename, location, artistname]
-    );
+    if (!isValid) {
+      throw new UnauthorizedError("Invalid email/password.");
+    }
 
-    const admin = result.rows[0];
-    const token = createToken(admin);
-    return { admin, token };
+    delete user.password; // Remove password from user object before returning
+
+    return user;
   }
 
   static async getAllEventRequests(requester) {
@@ -72,7 +68,7 @@ class Admin {
 
     const result = await db.query(
       `SELECT requestId, eventId, userId, status, requestDate, startTime, endTime, amount, artistName, eventName  
-       FROM CalendarEventRequests`,
+       FROM CalendarEventRequests`
     );
 
     if (!result.rows.length) {
@@ -82,14 +78,14 @@ class Admin {
     return result.rows;
   }
 
-  static async deleteEventRequest(requestid, requester) {
-    if (requester.usertype !== "Admin") {
+  static async deleteEventRequest(requestId, requester) {
+    if (requester.userType !== "Admin") {
       throw new UnauthorizedError("You are not authorized to delete this request.");
     }
 
     const eventResult = await db.query(
       `SELECT requestId FROM CalendarEventRequests WHERE requestId = $1`,
-      [requestid]
+      [requestId]
     );
 
     const event = eventResult.rows[0];
@@ -100,24 +96,24 @@ class Admin {
     const result = await db.query(
       `DELETE FROM CalendarEventRequests WHERE requestId = $1 
        RETURNING requestId, eventId, userId, status, requestDate, startTime, endTime, amount`,
-      [requestid]
+      [requestId]
     );
 
-    if (!result.rows[0]) {
+    if (!result.rows.length) {
       throw new BadRequestError("There was an error deleting the event request.");
     }
 
     return { deleted: result.rows[0] };
   }
 
-  static async updateEventRequest(requestid, updateData, requester) {
+  static async updateEventRequest(requestId, updateData, requester) {
     if (requester.userType !== "Admin") {
       throw new UnauthorizedError("You are not authorized to update this request.");
     }
 
     const eventResult = await db.query(
-      `SELECT requestid FROM CalendarEventRequests WHERE requestId = $1`,
-      [requestid]
+      `SELECT requestId FROM CalendarEventRequests WHERE requestId = $1`,
+      [requestId]
     );
 
     const event = eventResult.rows[0];
@@ -125,14 +121,20 @@ class Admin {
       throw new NotFoundError("Event request not found.");
     }
 
-    const { query, values } = sqlForPartialUpdate(
-      "calendareventrequests",
-      updateData,
-      "requestid",
-      requestid
+    const result = await db.query(
+      `UPDATE CalendarEventRequests
+       SET status = $1, requestDate = $2, startTime = $3, endTime = $4, amount = $5
+       WHERE requestId = $6
+       RETURNING requestId, eventId, userId, status, requestDate, startTime, endTime, amount`,
+      [
+        updateData.status,
+        updateData.requestDate,
+        updateData.startTime,
+        updateData.endTime,
+        updateData.amount,
+        requestId,
+      ]
     );
-
-    const result = await db.query(query, values);
 
     if (!result.rows.length) {
       throw new BadRequestError("There was an error updating the event request.");
@@ -147,8 +149,7 @@ class Admin {
     }
 
     const result = await db.query(
-      `SELECT userId, name, email, userType, artistName 
-       FROM users ORDER BY email`
+      `SELECT userId, name, email, userType, artistName FROM Users ORDER BY email`
     );
 
     if (!result.rows.length) {
@@ -158,45 +159,35 @@ class Admin {
     return result.rows;
   }
 
-  static async updateUser(userid, updateData) {
+  static async updateUser(userId, updateData) {
+    // Check if the user exists
     const userResult = await db.query(
-      `SELECT userId, password FROM users WHERE Userid = $1`,
-      [userid]
+        `SELECT userId FROM users WHERE userId = $1`,
+        [userId]
     );
 
     const user = userResult.rows[0];
     if (!user) {
-      throw new NotFoundError("User not found.");
+        throw new NotFoundError("User not found.");
     }
 
-    if (updateData.password && updateData.password.length === 0) {
-      updateData.password = user.password;
-    } else if (updateData.password && updateData.password.length < 8) {
-      throw new BadRequestError("Password must be at least 8 characters");
-    } else if (updateData.password) {
-      const hashedPassword = await bcrypt.hash(updateData.password, parseInt(BCRYPT_WORK_FACTOR));
-      updateData.password = hashedPassword;
-    }
+    // Generate the partial update SQL statement
+    const { query, values } = sqlForPartialUpdate("Users", updateData, "userId", userId);
 
-    const { query, values } = sqlForPartialUpdate("users", updateData, "userid", userid);
-
+    
     const result = await db.query(query, values);
-
-    if (!result.rows.length) {
-      throw new BadRequestError("There was an error updating the user.");
-    }
-
     return result.rows[0];
-  }
+}
 
-  static async deleteUser(userid, requester) {
-    if (!requester || requester.userType !== "Admin") {
+
+  static async deleteUser(userId, requester) {
+    if (requester.userType !== "Admin") {
       throw new UnauthorizedError("You are not authorized to delete this user.");
     }
 
     const userResult = await db.query(
-      `SELECT userId FROM users WHERE userId = $1`,
-      [userid]
+      `SELECT userId FROM Users WHERE userId = $1`,
+      [userId]
     );
 
     const user = userResult.rows[0];
@@ -205,9 +196,9 @@ class Admin {
     }
 
     const result = await db.query(
-      `DELETE FROM users WHERE userId = $1 
+      `DELETE FROM Users WHERE userId = $1 
        RETURNING userId, name, email, userType`,
-      [userid]
+      [userId]
     );
 
     if (!result.rows.length) {
