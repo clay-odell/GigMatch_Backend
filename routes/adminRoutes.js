@@ -36,7 +36,6 @@ router.post("/login", async (req, res, next) => {
 // Route to fetch all event requests
 router.get("/event-requests", async (req, res, next) => {
   try {
-    
     const requests = await Admin.getAllEventRequests(req.user);
     if (!requests) {
       throw new NotFoundError("No event requests found");
@@ -47,12 +46,12 @@ router.get("/event-requests", async (req, res, next) => {
   }
 });
 
-//Update user
-router.put("/:id", async (req, res, next) => {
+// Update user
+router.put("/:userid", async (req, res, next) => { // Matching param name to your schema
   try {
-    const userId = req.params.id;
+    const userid = req.params.userid;
     const updateData = req.body;
-    const updatedUser = await Admin.updateUser(userId, updateData);
+    const updatedUser = await Admin.updateUser(userid, updateData);
     res.json(updatedUser);
   } catch (error) {
     next(error);
@@ -61,13 +60,13 @@ router.put("/:id", async (req, res, next) => {
 
 // Route to delete an event request
 router.delete(
-  "/event-requests/:requestId",
+  "/event-requests/:requestid",
   authenticateJWT,
   ensureCorrectUserOrAdmin,
   async (req, res, next) => {
     try {
       const result = await Admin.deleteEventRequest(
-        req.params.requestId,
+        req.params.requestid,
         req.user
       );
       if (!result) {
@@ -81,13 +80,13 @@ router.delete(
 );
 
 // Route to update an event request
-router.put("/event-requests/:requestId", isAdmin, async (req, res, next) => {
+router.put("/event-requests/:requestid", isAdmin, async (req, res, next) => {
   try {
     if (!req.body) {
       throw new BadRequestError("Update data is missing");
     }
     const result = await Admin.updateEventRequest(
-      req.params.id,
+      req.params.requestid,
       req.body,
       req.user
     );
@@ -115,12 +114,12 @@ router.get("/users", authenticateJWT, isAdmin, async (req, res, next) => {
 
 // Route to delete a user
 router.delete(
-  "/users/:userId",
+  "/users/:userid",
   authenticateJWT,
   ensureCorrectUserOrAdmin,
   async (req, res, next) => {
     try {
-      const result = await Admin.deleteUser(req.params.userId, req.user);
+      const result = await Admin.deleteUser(req.params.userid, req.user);
       if (!result) {
         throw new NotFoundError("User not found");
       }

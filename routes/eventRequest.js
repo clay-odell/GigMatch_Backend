@@ -11,39 +11,37 @@ const {
   UnauthorizedError,
   NotFoundError,
 } = require("../expressError");
-const { token } = require("morgan");
 
 // Create event request
 router.post("/", authenticateJWT, async (req, res, next) => {
   try {
     const {
-      eventName,
-      artistName,
+      eventname,
+      artistname,
       status,
-      requestDate,
-      startTime,
-      endTime,
-      userId,
+      requestdate,
+      starttime,
+      endtime,
+      userid,
       amount,
     } = req.body;
 
-    if (!artistName) {
+    if (!artistname) {
       throw new BadRequestError("Artist name is required");
     }
 
     const eventRequest = await CalendarEventRequest.create({
-      eventName,
-      artistName,
+      eventname,
+      artistname,
       status,
-      requestDate,
-      startTime,
-      endTime,
-      userId,
+      requestdate,
+      starttime,
+      endtime,
+      userid,
       amount,
     });
-    const token = req.token;
 
-    res.status(201).json({ eventRequest, token });
+    res.status(201).json({ eventRequest });
   } catch (error) {
     next(new BadRequestError(error.message));
   }
@@ -51,13 +49,13 @@ router.post("/", authenticateJWT, async (req, res, next) => {
 
 // Update event request
 router.put(
-  "/:requestId",
+  "/:requestid",
   authenticateJWT,
   ensureCorrectUserOrAdmin,
   async (req, res, next) => {
     try {
       const updatedRequest = await CalendarEventRequest.updateRequest(
-        req.params.requestId,
+        req.params.requestid,
         req.body,
         req.user
       );
@@ -80,13 +78,13 @@ router.get("/", authenticateJWT, isAdmin, async (req, res, next) => {
 
 // Get event requests by user ID
 router.get(
-  "/user/:userId",
+  "/user/:userid",
   authenticateJWT,
   ensureCorrectUserOrAdmin,
   async (req, res, next) => {
     try {
       const eventRequests = await CalendarEventRequest.getByUserId(
-        req.params.userId
+        req.params.userid
       );
 
       if (!eventRequests || eventRequests.length === 0) {
@@ -97,8 +95,7 @@ router.get(
       }
       res.json({ eventRequests });
     } catch (error) {
-      console.error("Error in fetching event requests:", error.message);
-      // Log error details
+      console.error("Error fetching event requests:", error.message);
       next(new NotFoundError(error.message));
     }
   }
