@@ -1,6 +1,7 @@
 require('dotenv').config();
 
 const DATABASE_URL = process.env.VITE_PSQL_URL || "postgresql://localhost:5432";
+console.log(DATABASE_URL);
 const port = process.env.PORT || 3000;
 const SECRET_KEY = process.env.VITE_SECRET_KEY || "my-secret-key";
 function getDatabaseUri() {
