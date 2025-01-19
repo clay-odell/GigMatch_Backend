@@ -24,14 +24,21 @@ router.post("/register", async (req, res, next) => {
 // Admin login route
 router.post("/login", async (req, res, next) => {
   try {
-    const { email, password } = req.body;
-    const admin = await Admin.login(email, password);
-    const token = createToken(admin);
-    return res.json({ token, admin });
-  } catch (err) {
-    return next(err);
+  const { email, password } = req.body;
+  if (!email || !password) {
+    throw new BadRequestError("Email and password are required.");
   }
+
+  // Authenticate the user
+  const { user, token } = await Admin.authenticate(email, password);
+
+  // Respond with the token and user information
+  return res.json({ token, user });
+} catch (err) {
+  return next(err);
+}
 });
+
 
 // Route to fetch all event requests
 router.get("/event-requests", async (req, res, next) => {

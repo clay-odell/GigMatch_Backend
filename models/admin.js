@@ -9,6 +9,25 @@ const {
 } = require("../expressError");
 
 class Admin {
+  static async authenticate(email, password) {
+    const result = await db.query(
+      `SELECT userId, name, email, userType, venueName, location, artistname
+      FROM Users where email = $1`,
+      [email]
+    );
+    const user = result.rows[0];
+    if (!user) throw new NotFoundError("Admin/Venue user not found");
+
+    const isValid = await bcrypt.compare(password, user.password);
+    if (!isValid) throw new UnauthorizedError("Invalid username/password");
+
+    // Exclude the password from the admin object before returning it
+    const { password: _password, ...userWithoutPassword } = user;
+    const token = createToken(userWithoutPassword);
+    return { user: userWithoutPassword, token };
+  }
+  
+
   static async register(data) {
     const hashedPassword = await bcrypt.hash(data.password, 10);
     const result = await db.query(
@@ -56,7 +75,7 @@ class Admin {
       throw new UnauthorizedError("Invalid email/password.");
     }
 
-    delete user.password; // Remove password from user object before returning
+    delete user.password; 
 
     return user;
   }
