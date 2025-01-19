@@ -4,12 +4,7 @@ const { getDatabaseUri } = require("./config");
 
 const db = new Client({
   connectionString: getDatabaseUri(),
-  ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false
-});
-
-db.on('error', err => {
-  console.error('Unexpected error on idle client', err);
-  process.exit(-1);
+  ssl: true
 });
 
 db.connect()
