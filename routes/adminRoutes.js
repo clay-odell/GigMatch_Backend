@@ -21,17 +21,22 @@ router.post("/register", async (req, res, next) => {
   }
 });
 
-// Admin login route
 router.post("/login", async (req, res, next) => {
   try {
     const { email, password } = req.body;
-    const admin = await Admin.login(email, password);
-    const token = createToken(admin);
+    const admin = await Admin.authenticate(email, password);  // Use Admin.authenticate instead of User.authenticate
+
+    if (admin.usertype !== 'Admin') {
+      throw new UnauthorizedError("User is not an admin");
+    }
+
+    const token = createToken(admin);  // Create token with admin details
     return res.json({ token, admin });
   } catch (err) {
     return next(err);
   }
 });
+
 
 // Route to fetch all event requests
 router.get("/event-requests", async (req, res, next) => {
