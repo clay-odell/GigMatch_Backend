@@ -152,7 +152,7 @@ class User {
     const { query, values } = sqlForPartialUpdate(
       "users",
       updateData,
-      "userId",
+      "userid",
       userId
     );
 
