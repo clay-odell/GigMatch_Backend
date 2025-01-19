@@ -130,37 +130,46 @@ class User {
   static async updateUser(userId, updateData) {
     // Check if the user exists
     const userResult = await db.query(
-      `SELECT userId FROM Users WHERE userId = $1`,
-      [userId]
+        `SELECT userId, password FROM Users WHERE userId = $1`,
+        [userId]
     );
 
     const user = userResult.rows[0];
     if (!user) {
-      throw new NotFoundError("User not found.");
-    }
-  
-    // Hash the new password if provided
-    if (updateData.password) {
-      const hashedPassword = await bcrypt.hash(
-        updateData.password,
-        parseInt(BCRYPT_WORK_FACTOR)
-      );
-      updateData.password = hashedPassword;
+        throw new NotFoundError("User not found.");
     }
 
+    // Check if password is provided and valid, otherwise use current password
+    if (updateData.password && updateData.password.length === 0) {
+        updateData.password = user.password; // Retain the current password
+    } else if (updateData.password && updateData.password.length < 8) {
+        throw new BadRequestError("Password must be at least 8 characters");
+    } else if (updateData.password) {
+        const hashedPassword = await bcrypt.hash(
+            updateData.password,
+            parseInt(BCRYPT_WORK_FACTOR)
+        );
+        updateData.password = hashedPassword;
+    }
+    
     // Generate the partial update SQL statement
     const { query, values } = sqlForPartialUpdate(
-      "users",
-      updateData,
-      "userid",
-      userId
+        "users",
+        updateData,
+        "userid",
+        userId
     );
 
     // Execute the update query
     const result = await db.query(query, values);
 
+    if (!result.rows.length) {
+        throw new BadRequestError("There was an error updating the user.");
+    }
+
     return result.rows[0];
-  }
+}
+
 }
 
 module.exports = User;

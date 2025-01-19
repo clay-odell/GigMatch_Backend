@@ -166,6 +166,43 @@ class Admin {
   static async updateUser(userId, updateData) {
     // Check if the user exists
     const userResult = await db.query(
+      `SELECT userId, password FROM Users WHERE userId = $1`,
+      [userId]
+    );
+
+    const user = userResult.rows[0];
+    if (!user) {
+      throw new NotFoundError("User not found.");
+    }
+
+    // Check if password is provided and valid, otherwise use current password
+    if (updateData.password && updateData.password.length === 0) {
+        updateData.password = user.password; // Retain current password if new password is blank
+    } else if (updateData.password && updateData.password.length < 8) {
+        throw new BadRequestError("Password must be at least 8 characters");
+    } else if (updateData.password) {
+        const hashedPassword = await bcrypt.hash(
+            updateData.password,
+            parseInt(BCRYPT_WORK_FACTOR)
+        );
+        updateData.password = hashedPassword;
+    }
+
+    // Generate the partial update SQL statement
+    const { query, values } = sqlForPartialUpdate("Users", updateData, "userId", userId);
+
+    // Execute the update query
+    const result = await db.query(query, values);
+
+    if (!result.rows.length) {
+      throw new BadRequestError("There was an error updating the user.");
+    }
+
+    return result.rows[0];
+}
+ static async updateUser(userId, updateData) {
+    // Check if the user exists
+    const userResult = await db.query(
       `SELECT userId FROM Users WHERE userId = $1`,
       [userId]
     );
