@@ -13,7 +13,7 @@ const { createToken } = require("../helpers/tokens");
 class Admin {
   static async authenticate(email, password) {
     const result = await db.query(
-      `SELECT userId, name, email, userType, venueName, location, artistname
+      `SELECT userId, name, email, password, userType, venueName, location, artistname
       FROM Users where email = $1`,
       [email]
     );
@@ -57,7 +57,7 @@ class Admin {
         data.name,
         data.email,
         hashedPassword,
-        'Admin', // Ensure that 'Admin' is passed as the userType
+        'Admin',
         data.venueName,
         data.location,
         data.artistname
