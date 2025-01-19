@@ -100,8 +100,9 @@ router.put("/event-requests/:requestid", isAdmin, async (req, res, next) => {
 });
 
 // Route to fetch all users
-router.get("/users", authenticateJWT, isAdmin, async (req, res, next) => {
+router.get("/users",  isAdmin, async (req, res, next) => {
   try {
+
     const users = await Admin.getAllUsers(req.user);
     if (!users) {
       throw new NotFoundError("No users found");
