@@ -4,7 +4,7 @@ const { UnauthorizedError } = require("../expressError");
 
 const authenticateJWT = (req, res, next) => {
   const authHeader = req.headers.authorization;
-  console.log("Authorization Header:", authHeader); // Log authorization header
+  
   
   if (!authHeader) {
     return next(new UnauthorizedError("Access token missing or invalid."));
@@ -18,7 +18,7 @@ const authenticateJWT = (req, res, next) => {
   
   try {
     const decoded = jwt.verify(token, SECRET_KEY); // Verify token
-    console.log("Decoded Token:", decoded); // Log decoded token
+   
     
     if (!decoded.sub || !decoded.userType) {
       return next(new UnauthorizedError("Invalid access token."));
@@ -26,7 +26,7 @@ const authenticateJWT = (req, res, next) => {
     
     req.user = { userID: decoded.sub, userType: decoded.userType }; // Set user details
     req.token = token;
-    next(); // Proceed to next middleware
+    next(); 
   } catch (error) {
     return next(new UnauthorizedError("Invalid access token."));
   }
@@ -44,8 +44,8 @@ const isAdmin = (req, res, next) => {
 const ensureCorrectUserOrAdmin = (req, res, next) => {
   try {
     const user = req.user;
-    console.log(user.userID);
-    if (user && (user.userID === req.params.userID || user.userType === "Admin")) {
+    
+    if (user && (user.userID === req.params.userId || user.userType === "Admin")) {
       return next();
     } else {
       throw new UnauthorizedError("You are not authorized to access this resource.");
