@@ -6,7 +6,7 @@ const SECRET_KEY = process.env.VITE_SECRET_KEY || "my-secret-key";
 function getDatabaseUri() {
     return process.env.NODE_ENV === "test"
       ? `${DATABASE_URL}/gigmatch_test`
-      : `${DATABASE_URL}/gigmatch_db`;
+      : `${DATABASE_URL}/postgres`;
 }
 
 const BCRYPT_WORK_FACTOR = process.env.BCRYPT_WORK_FACTOR || 14;
