@@ -10,7 +10,6 @@ const { NotFoundError, BadRequestError } = require("../expressError");
 
 const router = express.Router();
 
-// Admin registration route
 router.post("/register", async (req, res, next) => {
   try {
     const newAdmin = await Admin.register(req.body);
@@ -22,24 +21,24 @@ router.post("/register", async (req, res, next) => {
 });
 
 
-
 // Admin login route
 router.post("/login", async (req, res, next) => {
   try {
-  const { email, password } = req.body;
-  if (!email || !password) {
-    throw new BadRequestError("Email and password are required.");
+    const { email, password } = req.body;
+    if (!email || password == null) {
+      throw new BadRequestError("Email and password are required.");
+    }
+
+    // Authenticate the user
+    const { user, token } = await Admin.authenticate(email, password);
+
+    // Respond with the token and user information
+    return res.json({ token, user });
+  } catch (err) {
+    return next(err);
   }
-
-  // Authenticate the user
-  const { user, token } = await Admin.authenticate(email, password);
-
-  // Respond with the token and user information
-  return res.json({ token, user });
-} catch (err) {
-  return next(err);
-}
 });
+
 
 
 // Route to fetch all event requests
@@ -57,9 +56,9 @@ router.get("/event-requests", async (req, res, next) => {
 });
 
 //Update user
-router.put("/:id", async (req, res, next) => {
+router.put("/:userid", async (req, res, next) => {
   try {
-    const userId = req.params.id;
+    const userId = req.params.userid;
     const updateData = req.body;
     const updatedUser = await Admin.updateUser(userId, updateData);
     res.json(updatedUser);

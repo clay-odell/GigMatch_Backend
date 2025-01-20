@@ -7,7 +7,7 @@ const {
   BadRequestError,
   UnauthorizedError,
 } = require("../expressError");
-const { sqlForPartialUpdate } = require('../helpers/sqlForPartialUpdate');
+const { sqlForPartialUpdate } = require("../helpers/sqlForPartialUpdate");
 const { BCRYPT_WORK_FACTOR } = require("../config");
 
 class User {
@@ -38,7 +38,9 @@ class User {
     userType = "Artist",
   }) {
     if (password.length < 8) {
-      throw new BadRequestError("Password must be at least 8 characters in length");
+      throw new BadRequestError(
+        "Password must be at least 8 characters in length"
+      );
     }
     const duplicateCheck = await db.query(
       `SELECT userId, name, email, password, artistName, userType FROM Users WHERE email = $1`,
@@ -46,7 +48,7 @@ class User {
     );
 
     if (duplicateCheck.rows[0]) {
-      console.error("Existing user found:", duplicateCheck.rows[0]);
+      or("Existing user found:", duplicateCheck.rows[0]);
       throw new BadRequestError("Email is already registered.");
     }
 
@@ -132,23 +134,25 @@ class User {
       `SELECT userId FROM Users WHERE userId = $1`, // Correct table name
       [userId]
     );
-  
+
     const user = userResult.rows[0];
     if (!user) {
       throw new NotFoundError("User not found.");
     }
-  
-  
+
     // Generate the partial update SQL statement
-    const { query, values } = sqlForPartialUpdate("users", updateData, "userid", userId);
-  
+    const { query, values } = sqlForPartialUpdate(
+      "users",
+      updateData,
+      "userid",
+      userId
+    );
+
     // Execute the update query
     const result = await db.query(query, values);
-    console.log("Update Result:", result);
+
     return result.rows[0];
   }
-  
-
 }
 
 module.exports = User;
