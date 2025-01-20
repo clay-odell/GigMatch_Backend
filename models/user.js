@@ -37,6 +37,9 @@ class User {
     artistName,
     userType = "Artist",
   }) {
+    if (password.length < 8) {
+      throw new BadRequestError("Password must be at least 8 characters in length");
+    }
     const duplicateCheck = await db.query(
       `SELECT userId, name, email, password, artistName, userType FROM Users WHERE email = $1`,
       [email]
@@ -135,21 +138,9 @@ class User {
       throw new NotFoundError("User not found.");
     }
   
-    // Hash the new password if provided
-    if (updateData.password) {
-      const hashedPassword = await bcrypt.hash(
-        updateData.password,
-        parseInt(BCRYPT_WORK_FACTOR)
-      );
-      updateData.password = hashedPassword;
-    }
   
     // Generate the partial update SQL statement
     const { query, values } = sqlForPartialUpdate("users", updateData, "userid", userId);
-  
-    // Logging the generated query and values
-    console.log("Generated SQL Query:", query);
-    console.log("Values for the SQL Query:", values);
   
     // Execute the update query
     const result = await db.query(query, values);
